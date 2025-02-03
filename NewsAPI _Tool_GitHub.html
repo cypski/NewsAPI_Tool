@@ -1,0 +1,318 @@
+<!DOCTYPE html>  
+<html lang="en"> <!-- set language -->
+<head> 
+    <meta charset="UTF-8"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Search Tool</title>
+    <style> /* CSS */
+        body {
+            font-family: Georgia, serif;
+            margin: 20px;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+        }
+        input, button, select {
+            padding: 10px;
+            margin: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #1558b0;
+        }
+        .results-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .article-card { 
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin: 10px;
+            width: 300px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            transition: transform 0.2s;
+        }
+        .article-card:hover {
+            transform: scale(1.02);
+        }
+        .article-title {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            color: #1a73e8;
+            text-decoration: none;
+        }
+        .article-description {
+            font-size: 0.95em;
+            color: #555;
+            margin-bottom: 15px;
+        }
+        .article-meta {
+            font-size: 0.85em;
+            color: #888;
+            margin-bottom: 10px;
+        }
+        .political-lean {
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.85em;
+            margin-top: 5px;
+            color: white;
+            text-align: center;
+            width: fit-content;
+        }
+        .left { background-color: #1e96e6; }
+        .lean-left { background-color: #85c1e9; }
+        .centre { background-color: #868584; }
+        .lean-right { background-color: #ce7676; }
+        .right { background-color: #e74c3c; }
+        #error-message {
+            color: red;
+            text-align: center;
+            margin-top: 20px;
+        }
+        /* building composite bar */                                    
+        .composite-bar-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+        .composite-bar {
+            display: flex;
+            width: 100%;
+            height: 20px;
+            border-radius: 5px;
+        }
+        .bar-left {
+            background-color: #1e96e6;
+        }
+        .bar-lean-left {
+            background-color: #85c1e9;
+        }
+        .bar-centre {
+            background-color: #868584;
+        }
+        .bar-lean-right {
+            background-color: #ce7676;
+        }
+        .bar-right {
+            background-color: #e74c3c;
+        }
+        .percentage-labels {
+            margin-top: 5px;
+            font-size: 0.8em;
+            color: #333;
+        }
+        #sidebar-container {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            z-index: 1000;
+        }
+        #article-count {
+            font-size: 18px;
+            font-weight: bold;
+            background-color: rgba(255, 255, 255, 0.7); /* slight background for readability */
+            padding: 5px 10px;
+            border-radius: 5px;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+            margin-bottom: 10px; /* space between counter and composite bar */
+        }
+        #newsapi-link {
+            font-size: 18px;
+            font-weight: bold;
+            background-color: rgba(255, 255, 255, 0.7); /* slight background for readability */
+            padding: 5px 10px;
+            border-radius: 5px;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+            margin-bottom: 10px; /* space between counter and composite bar */
+        }
+    </style>
+</head>
+<body> <!-- HTML -->
+    <h1>News Search Tool</h1>
+    <div style="text-align: center;">
+        <input type="text" id="search-input" placeholder="Enter keywords..." />
+        <button onclick="searchNews()">Search</button>
+        <select id="sort-order">
+            <option value="publishedAt">Sort by: Raw Chronological</option>
+            <option value="relevancy">Sort by: Relevancy</option>
+            <option value="popularity">Sort by: Popularity</option>
+        </select>
+    </div>
+    <div id="results" class="results-container"></div>
+    <div id="loading" class="loading" style="display: none;">Loading...</div>
+    <div id="no-results" class="no-results" style="display: none;">No articles found. Try different keywords.</div>
+    <div id="error-message"></div>
+    <div id="composite-bar-container" class="composite-bar-container" style="display: none;">
+        <div id="composite-bar" class="composite-bar"></div>
+        <div id="percentage-labels" class="percentage-labels"></div>
+    </div>
+    <div id="sidebar-container" style="position: fixed; top: 20px; left: 20px; display: flex; flex-direction: column; align-items: flex-start; z-index: 1000;">
+        <div id="article-count">Articles found: 0</div>
+        <a href="https://newsapi.org/" target="_blank" id="newsapi-link" style="font-size: 14px; color: #1a73e8; text-decoration: none; margin-top: 10px;">Visit NewsAPI</a>
+    </div>
+    <!-- ###REQUIRES DEBUG### <button id="load-more" onclick="loadMoreArticles()" style="display: none;">Load More (only works with upgraded NewsAPI plan)</button> -->
+    <h1>[Created by Casimir Wypyski in December of '24]</h1>
+    <script> // JavaScript
+        const API_KEY = '67c88g6d5f665n770982jhf722351dc7'; // <--- insert NewsAPI key here (sample provided
+        const approvedDomains = [
+            "apnews.com", "theatlantic.com", "thedailybeast.com", "democracynow.org",
+            "theguardian.com", "theintercept.com", "jacobinmag.com", "motherjones.com",
+            "msnbc.com", "thenation.com", "nytimes.com", "newyorker.com", "slate.com", "vox.com",
+            "abcnews.go.com", "axios.com", "bloomberg.com", "cbsnews.com", "cnn.com", "insider.com",
+            "nbcnews.com", "npr.org", "politico.com", "propublica.org", "reuters.com", "time.com", "usatoday.com",
+            "bbc.com", "csmonitor.com", "forbes.com", "marketwatch.com", "newsnationnow.com",
+            "newsweek.com", "realclearpolitics.com", "wsj.com", "semafor.com", "straightarrownews.com", "yahoo.com",
+            "the-dispatch.com", "theepochtimes.com", "thefreepress.com", "thehill.com",
+            "justthenews.com", "nationalreview.com", "nypost.com", "reason.com",
+            "washingtonexaminer.com", "thefederalist.com", "wsj.com", "newsmax.com",
+            "thepostmillennial.com", "freebeacon.com", "theamericanconservative.com", "spectator.org", "foxbusiness.com", "theblaze.com",
+            "breitbart.com", "cbn.com", "foxnews.com", "dailywire.com", "washingtontimes.com",
+            "ijr.com", "zerohedge.com", "oann.com"
+        ];
+
+        const politicalLeanMap = {
+            "Associated Press": "centre", "The Atlantic": "left", "Daily Beast": "left", "Democracy Now!": "left",
+            "The Guardian": "left", "The Intercept": "left", "Jacobin": "left", "Mother Jones": "left",
+            "MSNBC": "left", "The Nation": "left", "The New York Times": "left", "The New Yorker": "left", "Slate": "left", "Vox": "left",
+            "ABC News": "lean-left", "Axios": "lean-left", "Bloomberg": "lean-left", "CBS News": "lean-left", "CNN": "lean-left", "Insider": "lean-left",
+            "NBC News": "lean-left", "NPR": "lean-left", "Politico": "lean-left", "ProPublica": "lean-left", "Reuters": "centre", "Time": "lean-left", "USA Today": "lean-left",
+            "BBC News": "centre", "The Christian Science Monitor": "centre", "Forbes": "centre", "MarketWatch": "centre", "NewsNation": "centre",
+            "Newsweek": "centre", "RealClear Politics": "centre", "The Wall Street Journal": "centre", "Semafor": "centre", "Straight Arrow News": "centre", "Yahoo News": "centre",
+            "The Dispatch": "lean-right", "The Epoch Times": "right", "The Free Press": "right", "The Hill": "lean-right",
+            "Just the News": "lean-right", "National Review": "lean-right", "New York Post": "lean-right", "Reason": "centre",
+            "Washington Examiner": "lean-right", "The Federalist": "lean-right", "The Wall Street Journal": "centre", "Newsmax": "right",
+            "The Post Millennial": "right", "The Free Beacon": "right", "The American Conservative": "right", "The Spectator": "right", "Fox Business": "right", "The Blaze": "right",
+            "Breitbart": "right", "CBN": "right", "Fox News": "right", "The Daily Wire": "right", "The Washington Times": "right",
+            "IJR": "right", "Zero Hedge": "right", "OANN": "right"
+        };
+
+        let currentPage = 1;
+        let currentKeywords = '';
+        let currentSortOrder = 'publishedAt';  
+
+        async function searchNews() {
+            const keywords = document.getElementById('search-input').value;
+            const sortOrder = document.getElementById('sort-order').value;
+            const domains = approvedDomains.join(',');
+            const url = `https://newsapi.org/v2/everything?q=${keywords}&apiKey=${API_KEY}&domains=${domains}&sortBy=${sortOrder}&language=en&page=${currentPage}&pageSize=100`;
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('no-results').style.display = 'none';
+            document.getElementById('composite-bar-container').style.display = 'none';
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.articles.length === 0) {
+                    document.getElementById('no-results').style.display = 'block';
+                } else {
+                    displayArticles(data.articles);
+                    if (data.articles.length > 0) {
+                        document.getElementById('load-more').style.display = 'block';
+                    } else {
+                        document.getElementById('load-more').style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error("Fetch error:", error);
+                document.getElementById('error-message').innerText = 'An error occurred while fetching the news.';
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+        function loadMoreArticles() {
+            // incremental page numbers
+            currentPage++; 
+            // load next page of articles
+            searchNews(); 
+            // hide button
+            document.getElementById('load-more').style.display = 'none'; 
+        }
+        function renderCompositeBar(articles) {
+    const leanCounts = {
+        left: 0,
+        "lean-left": 0,
+        centre: 0,
+        "lean-right": 0,
+        right: 0,
+    };
+    // Count the articles based on their lean
+    articles.forEach(article => {
+        const lean = politicalLeanMap[article.source.name] || "centre";
+        if (leanCounts.hasOwnProperty(lean)) {
+            leanCounts[lean]++;
+        }
+    });
+    // Calculate percentages
+    const total = Object.values(leanCounts).reduce((sum, count) => sum + count, 0);
+    const percentages = Object.keys(leanCounts).reduce((acc, key) => {
+        acc[key] = total > 0 ? (leanCounts[key] / total) * 100 : 0;
+        return acc;
+    }, {});
+
+    // Render the bar
+    const compositeBar = document.getElementById("composite-bar");
+    compositeBar.innerHTML = ""; // Clear previous content
+    Object.entries(percentages).forEach(([lean, percentage]) => {
+        if (percentage > 0) {
+            const barSegment = document.createElement("div");
+            barSegment.className = `bar-${lean}`;
+            barSegment.style.width = `${percentage}%`;
+            compositeBar.appendChild(barSegment);
+        }
+    });
+    // updates labels
+    const percentageLabels = document.getElementById("percentage-labels");
+    percentageLabels.innerText = `Left: ${percentages.left.toFixed(1)}%, Lean Left: ${percentages["lean-left"].toFixed(1)}%, Centre: ${percentages.centre.toFixed(1)}%, Lean Right: ${percentages["lean-right"].toFixed(1)}%, Right: ${percentages.right.toFixed(1)}%`;
+    // diplays composite bar
+    document.getElementById("composite-bar-container").style.display = total > 0 ? "block" : "none";
+}
+        function displayArticles(articles) {
+    const resultsContainer = document.getElementById('results');
+    resultsContainer.innerHTML = '';
+    let articleCount = 0;
+            
+    articles.forEach(article => {
+        const articleCard = document.createElement('div');
+        articleCard.classList.add('article-card');
+        articleCard.innerHTML = `
+            <a href="${article.url}" class="article-title" target="_blank">${article.title}</a>
+            <p class="article-description">${article.description}</p>
+            <p class="article-meta">${article.source.name} - ${new Date(article.publishedAt).toLocaleString()}</p>
+            <div class="political-lean ${politicalLeanMap[article.source.name] || 'centre'}">${politicalLeanMap[article.source.name] || 'Centre'}</div>
+        `;
+        resultsContainer.appendChild(articleCard);
+        articleCount++;
+    });
+    // Update article count
+    document.getElementById('article-count').textContent = `Articles found: ${articleCount}`;
+    // Render the composite bar
+    renderCompositeBar(articles);
+}
+    </script>
+</body> 
+</html>

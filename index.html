@@ -1,5 +1,5 @@
 <!DOCTYPE html>  
-<html lang="en"> 
+<html lang="en"> <!-- set language -->
 <head> 
     <meta charset="UTF-8"> 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -84,8 +84,7 @@
             text-align: center;
             margin-top: 20px;
         }
-
-        /* New CSS for the Composite Bar */                                      /* Composite bar here */
+        /* building composite bar */                                    
         .composite-bar-container {
             position: absolute;
             top: 20px;
@@ -130,32 +129,28 @@
             align-items: flex-start;
             z-index: 1000;
         }
-
         #article-count {
             font-size: 18px;
             font-weight: bold;
-            background-color: rgba(255, 255, 255, 0.7); /* Slight background for readability */
+            background-color: rgba(255, 255, 255, 0.7); /* slight background for readability */
             padding: 5px 10px;
             border-radius: 5px;
             box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
-            margin-bottom: 10px; /* Space between counter and composite bar */
+            margin-bottom: 10px; /* space between counter and composite bar */
         }
-
         #newsapi-link {
             font-size: 18px;
             font-weight: bold;
-            background-color: rgba(255, 255, 255, 0.7); /* Slight background for readability */
+            background-color: rgba(255, 255, 255, 0.7); /* slight background for readability */
             padding: 5px 10px;
             border-radius: 5px;
             box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
-            margin-bottom: 10px; /* Space between counter and composite bar */
+            margin-bottom: 10px; /* space between counter and composite bar */
         }
-
     </style>
 </head>
 <body> <!-- HTML -->
     <h1>News Search Tool</h1>
-    
     <div style="text-align: center;">
         <input type="text" id="search-input" placeholder="Enter keywords..." />
         <button onclick="searchNews()">Search</button>
@@ -178,11 +173,9 @@
         <a href="https://newsapi.org/" target="_blank" id="newsapi-link" style="font-size: 14px; color: #1a73e8; text-decoration: none; margin-top: 10px;">Visit NewsAPI</a>
     </div>
     <!-- ###REQUIRES DEBUG### <button id="load-more" onclick="loadMoreArticles()" style="display: none;">Load More (only works with upgraded NewsAPI plan)</button> -->
-
     <h1>[Created by Casimir Wypyski in December of '24]</h1>
-    
     <script> // JavaScript
-        const API_KEY = '57e99c1d7a834e508650bda463329da1'; // Replace with your NewsAPI key
+        const API_KEY = '67c88g6d5f665n770982jhf722351dc7'; // <--- insert NewsAPI key here (sample provided
         const approvedDomains = [
             "apnews.com", "theatlantic.com", "thedailybeast.com", "democracynow.org",
             "theguardian.com", "theintercept.com", "jacobinmag.com", "motherjones.com",
@@ -251,16 +244,14 @@
                 document.getElementById('loading').style.display = 'none';
             }
         }
-
         function loadMoreArticles() {
-            currentPage++; // Increment page number
-            searchNews(); // Fetch next page of articles
-            document.getElementById('load-more').style.display = 'none'; // Hide button
+            // incremental page numbers
+            currentPage++; 
+            // load next page of articles
+            searchNews(); 
+            // hide button
+            document.getElementById('load-more').style.display = 'none'; 
         }
-
-
-
-
         function renderCompositeBar(articles) {
     const leanCounts = {
         left: 0,
@@ -269,7 +260,6 @@
         "lean-right": 0,
         right: 0,
     };
-
     // Count the articles based on their lean
     articles.forEach(article => {
         const lean = politicalLeanMap[article.source.name] || "centre";
@@ -277,7 +267,6 @@
             leanCounts[lean]++;
         }
     });
-
     // Calculate percentages
     const total = Object.values(leanCounts).reduce((sum, count) => sum + count, 0);
     const percentages = Object.keys(leanCounts).reduce((acc, key) => {
@@ -296,23 +285,17 @@
             compositeBar.appendChild(barSegment);
         }
     });
-
-    // Update labels
+    // updates labels
     const percentageLabels = document.getElementById("percentage-labels");
     percentageLabels.innerText = `Left: ${percentages.left.toFixed(1)}%, Lean Left: ${percentages["lean-left"].toFixed(1)}%, Centre: ${percentages.centre.toFixed(1)}%, Lean Right: ${percentages["lean-right"].toFixed(1)}%, Right: ${percentages.right.toFixed(1)}%`;
-
-    // Show the composite bar
+    // diplays composite bar
     document.getElementById("composite-bar-container").style.display = total > 0 ? "block" : "none";
 }
-
-
-
-
         function displayArticles(articles) {
     const resultsContainer = document.getElementById('results');
     resultsContainer.innerHTML = '';
     let articleCount = 0;
-
+            
     articles.forEach(article => {
         const articleCard = document.createElement('div');
         articleCard.classList.add('article-card');
@@ -325,14 +308,11 @@
         resultsContainer.appendChild(articleCard);
         articleCount++;
     });
-
     // Update article count
     document.getElementById('article-count').textContent = `Articles found: ${articleCount}`;
-
     // Render the composite bar
     renderCompositeBar(articles);
 }
-
     </script>
 </body> 
 </html>
